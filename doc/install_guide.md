@@ -69,6 +69,7 @@ version: '3.8'
 services:
   geth:
     image: ethereum/client-go:stable
+    container_name: alba_eth
     command: >
       --networkid 15
       --http --http.addr 0.0.0.0 --http.port 8545 --http.api "eth,web3,net,personal"
@@ -83,7 +84,7 @@ services:
 
 Iniciar la red privada
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 Crear el archivo `genesis.json`
