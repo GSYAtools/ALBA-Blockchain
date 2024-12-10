@@ -62,17 +62,24 @@ cd ~/ethereum-private
 nano docker-compose.yml
 ```
 
-Contenido de `docker-compose.yml`
+Crear una cuenta Ethereum principal para la red (solicitará una contraseña, no olvidarla)
+```bash
+docker run -it --rm -v $(pwd)/data:/root/.ethereum ethereum/client-go:stable account new
+```
+
+Contenido de `docker-compose.yml` (sustituir 0xYourNewEtherbaseAddress por la nueva direccion de la cuenta creada anteriormente)
 ```yml
 services:
   geth:
     image: ethereum/client-go:stable
     container_name: alba_eth
     command: >
-      --networkid 15
+      geth --networkid 15
       --http --http.addr 0.0.0.0 --http.port 8545 --http.api "eth,web3,net,personal"
-      --mine --miner.threads=1 --miner.gasprice=0 
+      --mine --miner.etherbase "0xYourNewEtherbaseAddress" --miner.gasprice 0
       --nodiscover --allow-insecure-unlock
+      --ipcdisable
+      --verbosity 3
     ports:
       - "8545:8545"
       - "30303:30303"

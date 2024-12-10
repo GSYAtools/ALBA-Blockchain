@@ -1,3 +1,4 @@
 # Datos de la red ethereum
 
-ethereum-private/data/*
+ethereum-private/data/geth
+ethereum-private/data/keystore
