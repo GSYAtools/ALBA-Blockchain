@@ -115,15 +115,15 @@ Contenido de `genesis.json`
 
 Inicializar la blockchain
 ```bash
-docker exec -it <nombre_del_contenedor> geth init /root/.ethereum/genesis.json
+docker compose run geth init /root/.ethereum/genesis.json
 ```
 
-Reemplazar `<nombre_del_contenedor>` con el nombre obtenido al ejecutar
+Comprobar que está en funcionamiento
 ```bash
 docker ps
 ```
 
-Crear una nueva cuenta en la blockchain
+Crear una nueva cuenta en la blockchain (Reemplazar `<nombre_del_contenedor>` con el nombre obtenido al ejecutar)
 ```bash
 docker exec -it <nombre_del_contenedor> geth account new
 ```
