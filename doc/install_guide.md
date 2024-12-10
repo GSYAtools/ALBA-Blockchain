@@ -42,3 +42,15 @@ Iniciar y habilitar el servicio
 sudo systemctl start docker
 sudo systemctl enable docker
 ```
+
+Probar la instalación
+```bash
+sudo docker run hello-world
+```
+
+Permitir la ejecución sin sudo
+```bash
+sudo usermod -aG docker $USER
+```
+
+## Instalación de Geth en Docker
