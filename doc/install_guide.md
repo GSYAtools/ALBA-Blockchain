@@ -54,3 +54,71 @@ sudo usermod -aG docker $USER
 ```
 
 ## Instalación de Geth en Docker
+
+Crear `docker-compose.yml`
+```bash
+mkdir ~/ethereum-private
+cd ~/ethereum-private
+nano docker-compose.yml
+```
+
+Contenido de `docker-compose.yml`
+```yml
+version: '3.8'
+
+services:
+  geth:
+    image: ethereum/client-go:stable
+    command: >
+      --networkid 15
+      --http --http.addr 0.0.0.0 --http.port 8545 --http.api "eth,web3,net,personal"
+      --mine --miner.threads=1 --miner.gasprice=0 
+      --nodiscover --allow-insecure-unlock
+    ports:
+      - "8545:8545"
+      - "30303:30303"
+    volumes:
+      - ./data:/root/.ethereum
+```
+
+Iniciar la red privada
+```bash
+docker-compose up -d
+```
+
+Crear el archivo `genesis.json`
+```bash
+nano genesis.json
+```
+
+Contenido de `genesis.json`
+```json
+{
+  "config": {
+    "chainId": 15,
+    "homesteadBlock": 0,
+    "eip150Block": 0,
+    "eip155Block": 0,
+    "eip158Block": 0
+  },
+  "difficulty": "0x400",
+  "gasLimit": "0xffffffffffffffff",
+  "alloc": {}
+}
+```
+
+Inicializar la blockchain
+```bash
+docker exec -it <nombre_del_contenedor> geth init /root/.ethereum/genesis.json
+```
+
+Reemplazar `<nombre_del_contenedor>` con el nombre obtenido al ejecutar
+```bash
+docker ps
+```
+
+Crear una nueva cuenta en la blockchain
+```bash
+docker exec -it <nombre_del_contenedor> geth account new
+```
+
