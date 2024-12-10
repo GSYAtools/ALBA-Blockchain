@@ -64,8 +64,6 @@ nano docker-compose.yml
 
 Contenido de `docker-compose.yml`
 ```yml
-version: '3.8'
-
 services:
   geth:
     image: ethereum/client-go:stable
