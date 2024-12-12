@@ -9,9 +9,11 @@ services:
       --nodiscover --allow-insecure-unlock
       --ipcdisable
       --verbosity 3
+      --metrics --pprof --pprof.addr 0.0.0.0 --pprof.port 6060
     ports:
       - "8545:8545"
       - "30303:30303"
+      - "6060:6060"
     volumes:
       - ./data:/root/.ethereum
 
@@ -21,9 +23,11 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./data/prometheus.yml:/etc/prometheus/prometheus.yml
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
+    depends_on:
+      - geth
   
   grafana:
     image: grafana/grafana-oss
