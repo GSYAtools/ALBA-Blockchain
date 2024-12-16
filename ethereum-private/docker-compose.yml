@@ -1,7 +1,7 @@
 services:
   geth:
     image: ethereum/client-go:v1.10.25
-    container_name: alba_eth
+    container_name: ethreum-node1
     command: >
       --networkid 15
       --http --http.addr 0.0.0.0 --http.port 8545 --http.api "eth,web3,net,personal"
@@ -9,14 +9,16 @@ services:
       --nodiscover --allow-insecure-unlock
       --ipcdisable
       --verbosity 3
-      --metrics --pprof --pprof.addr 0.0.0.0 --pprof.port 6060
-      --rinkeby
+      --metrics --metrics.addr 0.0.0.0 --metrics.port 6060 --metrics.expensive
+      --pprof --pprof.addr 0.0.0.0 --pprof.port 6061
     ports:
       - "8545:8545"
       - "30303:30303"
       - "6060:6060"
+      - "6061:6061"
     volumes:
-      - ./data:/root/.ethereum
+      - geth-data:/root/.ethereum
+      - ./geth-config/genesis.json:/opt/genesis.json
 
   prometheus:
     image: prom/prometheus
@@ -24,7 +26,8 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./data/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus-config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
     depends_on:
@@ -37,3 +40,12 @@ services:
       - "3000:3000"
     depends_on:
       - prometheus
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+
+volumes:
+  geth-data:
+  prometheus-data:
+  grafana-storage:

@@ -4,20 +4,32 @@ Para monitorizar una red con go-ethereum usando Prometheus, primero debes habili
 
 ```bash
 geth <otros comandos> --metrics --metrics.addr 127.0.0.1 --metrics.port 6060 --metrics.expensive
-````
+```
 ## 2. Configurar Prometheus
-Agrega el siguiente job a tu archivo de configuración prometheus.yml:
+Crear el fichero de configuracion `prometheus.yml` que se incluirá en la carpeta prometheus-config/
 
 ```yaml
-- job_name: 'go-ethereum'
-  scrape_interval: 10s
-  metrics_path: /debug/metrics/prometheus
-  static_configs:
-    - targets:
-      - '127.0.0.1:6060'
-    labels:
-      chain: ethereum
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+      scheme: http
+      timeout: 10s
+scrape_configs:
+  - job_name: geth
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metrics_path: /debug/metrics/prometheus
+    scheme: http
+    static_configs:
+      - targets:
+          - geth:6060
 ```
+
 ## 3. Consultas Útiles en Prometheus
 Puedes realizar las siguientes consultas en Prometheus para monitorizar diversos aspectos de tu red go-ethereum:
 
@@ -53,6 +65,11 @@ ethereum_txpool_pending
     Selecciona Prometheus o añádelo si aún no está configurado.
     Establece la URL de Prometheus (por ejemplo, http://localhost:9090).
     Haz clic en "Save & Test" para verificar la conexión.
+
+Para obtener la IP del contenedor de prometheus:
+
+    docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' nombre_contenedor_prometheus
+
 
 ### Crear un Nuevo Dashboard
 
