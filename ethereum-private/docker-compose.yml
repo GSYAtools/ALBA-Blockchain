@@ -4,7 +4,7 @@ services:
     container_name: ethreum-node1
     command: >
       --networkid 15
-      --http --http.addr 0.0.0.0 --http.port 8545 --http.api "eth,web3,net,personal"
+      --http --http.addr 0.0.0.0 --http.port 8545 --http.api "eth,web3,net,personal" --http.corsdomain "*"
       --mine --miner.etherbase "0x7d9f4d000dccA3B2CC3c77049A7AA1a2Ce6ceCfC" --miner.gasprice 0
       --nodiscover --allow-insecure-unlock
       --ipcdisable
