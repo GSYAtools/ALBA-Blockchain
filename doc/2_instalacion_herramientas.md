@@ -20,8 +20,19 @@ sudo apt-get install -y nodejs
 ### 3. Instalar Go-Ethereum (Geth)
 
 Geth será nuestro cliente Ethereum principal.
+
+Para Ubuntu:
 ```
 sudo add-apt-repository -y ppa:ethereum/ethereum
+sudo apt-get update
+sudo apt-get install ethereum
+```
+
+Para Debian:
+```
+echo "deb http://ppa.launchpad.net/ethereum/ethereum/ubuntu bionic main" | sudo tee /etc/apt/sources.list.d/ethereum-bionic.list
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 2A518C819BE37D2C2031944D1C52189C923F6CA9
+
 sudo apt-get update
 sudo apt-get install ethereum
 ```
