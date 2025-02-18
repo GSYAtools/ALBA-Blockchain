@@ -3,6 +3,10 @@
 ## config
 Configuración general de la blockchain
 
+### terminalTotalDifficulty y terminalTotalDifficultyPassed
+- Valores: 0 y true (respectivamente)
+- Configura el nodo para funcionar en una red Proof of Stake (PoS)
+
 ### chainId
 - Valor: 15
 - Descripción: Identificador único de la cadena. Protege contra ataques de repetición.
@@ -59,6 +63,8 @@ Configuración general de la blockchain
 ```json
 {
     "config": {
+        "terminalTotalDifficulty": 0,
+        "terminalTotalDifficultyPassed": true,
         "chainId": 15,
         "homesteadBlock": 0,
         "eip150Block": 0,
@@ -95,6 +101,6 @@ geth --datadir ./data --networkid 15 --http --http.addr '0.0.0.0' --http.port 85
 1. `geth --datadir ./data init ./genesis.json`
     - Este comando inicializa la base de datos del nodo con la configuración especificada en el archivo genesis.json.
     - No inicia un nodo en ejecución, solo prepara el directorio de datos.
-2. `geth --datadir ./data --networkid 15 --http --http.addr '0.0.0.0' --http.port 8545 --http.corsdomain "*" --mine --miner.threads 1`
+2. `geth --datadir ./data --networkid 15 --http --http.addr '0.0.0.0' --http.port 8545 --http.corsdomain "*" --mine --http.api eth,net,web3,admin`
     - Este comando inicia el nodo Ethereum con los parámetros especificados.
     - Utiliza el directorio de datos inicializado en el paso anterior.
