@@ -82,7 +82,7 @@ npm install -g pm2
 Elige una de estas bibliotecas para interactuar con la blockchain:
 ```
 npm install web3
-#o
+# o
 npm install ethers
 ```
 
