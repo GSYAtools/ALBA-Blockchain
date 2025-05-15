@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Ver JSON en Blockchain</title>
+    <style>
+        :root {
+            --bg: #f9f9f9;
+            --text: #2f3640;
+            --card: #ffffff;
+            --pre-bg: #282c34;
+            --button: #2d98da;
+            --button-hover: #2270aa;
+        }
+
+        body.dark {
+            --bg: #1e272e;
+            --text: #f5f6fa;
+            --card: #2f3640;
+            --pre-bg: #1c1c1c;
+            --button: #00a8ff;
+            --button-hover: #0090dd;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 40px;
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .container {
+            background: var(--card);
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            margin: 0 0 10px;
+        }
+
+        .info {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+
+        pre {
+            background: var(--pre-bg);
+            color: #fff;
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+
+        .error {
+            color: #e84118;
+            font-weight: bold;
+        }
+
+        .btn {
+            background: var(--button);
+            color: white;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-size: 1em;
+        }
+
+        .btn:hover {
+            background: var(--button-hover);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>📦 JSON desde la Blockchain</h1>
+        <button class="btn" onclick="toggleModo()">🌙 / ☀️</button>
+    </div>
+
+    <div class="container">
+        <div class="info">txid: <span id="txid" style="color: #007bff;"></span></div>
+        <div id="contenido">Cargando datos...</div>
+        <button id="descargarBtn" class="btn" style="display:none;" onclick="descargar()">⬇️ Descargar JSON</button>
+    </div>
+
+    <script>
+        let jsonData = null;
+
+        async function cargar() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const txid = urlParams.get('txid');
+            const cont = document.getElementById('contenido');
+            document.getElementById('txid').textContent = txid || '(no proporcionado)';
+
+            if (!txid) {
+                cont.innerHTML = '<div class="error">❌ Falta el parámetro "txid" en la URL</div>';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/leer-json/${txid}`);
+                if (!res.ok) throw new Error('Transacción no encontrada');
+                jsonData = await res.json();
+                cont.innerHTML = `<pre>${JSON.stringify(jsonData, null, 2)}</pre>`;
+                document.getElementById('descargarBtn').style.display = 'inline-block';
+            } catch (e) {
+                cont.innerHTML = '<div class="error">❌ Error al recuperar el JSON desde la blockchain</div>';
+            }
+        }
+
+        function descargar() {
+            if (!jsonData) return;
+            const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'datos-blockchain.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function toggleModo() {
+            const dark = document.body.classList.toggle('dark');
+            localStorage.setItem('modoOscuro', dark ? '1' : '0');
+        }
+
+        function aplicarModoGuardado() {
+            const dark = localStorage.getItem('modoOscuro') === '1';
+            if (dark) document.body.classList.add('dark');
+        }
+
+        aplicarModoGuardado();
+        cargar();
+    </script>
+</body>
+
+</html>

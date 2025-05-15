@@ -1,0 +1,27 @@
+# Dependencias y archivos generados
+vendor/
+bin/
+pkg/
+
+# Archivos de compilación y caché
+*.exe
+*.dll
+*.so
+*.dylib
+*.out
+*.o
+*.a
+
+# Archivos de testing y cobertura
+*_test.go
+coverage.out
+
+# Archivos de configuración y logs
+.env
+.env.local
+*.log
+
+# Configuración de editor de texto
+.vscode/
+.idea/
+.DS_Store
