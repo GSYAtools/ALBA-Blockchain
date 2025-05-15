@@ -1,3 +1,7 @@
+# Proyecto ALBA: blockchain
+
+Documentacion DeepWiki: [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/GSYAtools/ALBA-Blockchain)
+
 ## Reinicio de la red
 
 ```bash
