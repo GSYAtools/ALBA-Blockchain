@@ -1,0 +1,88 @@
+@startuml
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor #f0f0f0
+  BorderColor Black
+}
+skinparam database {
+  BackgroundColor #dfefff
+}
+
+actor Admin
+actor Auditor
+actor Usuario
+node "Sistema Externo (Smart Home / IoT)" as ExternalSystem
+
+rectangle "API SecureStorage (Node.js)" {
+  [Auth & Roles (JWT + Token)]
+  [Usuarios & Sistemas]
+  [Fabric Gateway SDK]
+  [Rate Limiting & Validator]
+  [Auditoría Interna API]
+  [Chaincode Manager]
+  [Client SDK Generator]
+}
+
+database "DB: PostgreSQL" {
+  [users]
+  [systems]
+  [tokens]
+  [api_logs]
+  [chaincodes]
+}
+
+database "Audit Logs Blockchain"
+database "Prometheus (Metrics)"
+
+cloud "Hyperledger Fabric" {
+  [Peer Org1]
+  [Orderer]
+  [Chaincode secureStorage]
+}
+
+rectangle "Panel Web (Admin UI)" {
+  [Gestión de usuarios]
+  [Gestión de sistemas]
+  [Auditoría y métricas]
+}
+
+rectangle "Grafana" as GrafanaUI
+
+' === Conexiones ===
+
+Admin --> [Auth & Roles (JWT + Token)]
+Admin --> [Gestión de usuarios]
+Admin --> [Gestión de sistemas]
+Admin --> [Auditoría y métricas]
+
+Usuario --> [Auth & Roles (JWT + Token)]
+Usuario --> [Usuarios & Sistemas]
+
+Auditor --> [Auth & Roles (JWT + Token)]
+Auditor --> [Auditoría y métricas]
+
+ExternalSystem --> [Auth & Roles (JWT + Token)]
+ExternalSystem --> [Rate Limiting & Validator]
+
+[Usuarios & Sistemas] --> [users]
+[Usuarios & Sistemas] --> [systems]
+[Rate Limiting & Validator] --> [api_logs]
+[Auth & Roles (JWT + Token)] --> [tokens]
+
+[Fabric Gateway SDK] --> [Chaincode secureStorage]
+[Chaincode secureStorage] --> [Peer Org1]
+[Peer Org1] --> [Orderer]
+
+[Chaincode secureStorage] --> [Audit Logs Blockchain]
+[Chaincode Manager] --> [Chaincode secureStorage]
+
+[Auditoría Interna API] --> [api_logs]
+[Auditoría Interna API] --> [Audit Logs Blockchain]
+
+[Client SDK Generator] --> ExternalSystem
+
+[Prometheus (Metrics)] --> GrafanaUI
+[Fabric Gateway SDK] --> [Prometheus (Metrics)]
+[Chaincode secureStorage] --> [Prometheus (Metrics)]
+@enduml

@@ -1,0 +1,63 @@
+@startuml
+hide circle
+skinparam linetype ortho
+
+entity users {
+  +id : SERIAL PK
+  username : TEXT <<UNIQUE>>
+  password_hash : TEXT
+  role : TEXT ('admin','auditor','user')
+  created_at : TIMESTAMP
+}
+
+entity systems {
+  +id : SERIAL PK
+  name : TEXT
+  token_hash : TEXT
+  token_last_generated : TIMESTAMP
+  active : BOOLEAN
+  created_at : TIMESTAMP
+  user_id : INTEGER FK -> users.id
+}
+
+entity api_logs {
+  +id : SERIAL PK
+  timestamp : TIMESTAMP
+  type : TEXT ('auth','access','error','chaincode','admin','rate_limit')
+  action : TEXT
+  ip_address : TEXT
+  status_code : INTEGER
+  message : TEXT
+  payload_hash : TEXT
+  user_id : INTEGER FK -> users.id
+  system_id : INTEGER FK -> systems.id
+}
+
+entity blockchain_logs {
+  +id : SERIAL PK
+  timestamp : TIMESTAMP
+  txid : TEXT
+  chaincode_name : TEXT
+  function_name : TEXT
+  payload_hash : TEXT
+  status : TEXT ('SUCCESS','FAIL','PENDING')
+  system_id : INTEGER FK -> systems.id
+}
+
+entity chaincodes {
+  +id : SERIAL PK
+  name : TEXT
+  version : TEXT
+  status : TEXT ('INSTALLED','INSTANTIATED','FAILED')
+  path : TEXT
+  created_at : TIMESTAMP
+  installed_by : INTEGER FK -> users.id
+}
+
+' Relaciones explícitas
+users ||--o{ systems : "posee"
+users ||--o{ api_logs : "registra"
+systems ||--o{ api_logs : "usa"
+systems ||--o{ blockchain_logs : "emite"
+users ||--o{ chaincodes : "instala"
+@enduml

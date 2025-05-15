@@ -25,6 +25,8 @@ Desarrollar una plataforma centralizada (API en Node.js + PostgreSQL + Fabric) q
 | **No repudio**     | Toda acción está firmada por identidad Fabric (o sistema tokenizado)   |
 | **Disponibilidad** | Control de acceso API, rate-limiting, health-checks, Prometheus        |
 
+Detalle: [detalles](docs_v2/API_Blockchain_v2_fase_0.md)
+
 ---
 
 ## 🧱 FASE 1 – Diseño del Backend `Node.js`
@@ -39,6 +41,7 @@ Desarrollar una plataforma centralizada (API en Node.js + PostgreSQL + Fabric) q
 6. **Logs de transacciones blockchain**
 7. **Instalación de chaincodes por Admin (en nombre de la API)**
 
+Detalle: [text](docs_v2/API_Blockchain_v2_fase_1.md)
 ---
 
 ## 🧱 FASE 2 – Base de Datos
@@ -86,6 +89,8 @@ Elegido por:
 | `/audit/chaincode`   | GET    | Auditor/Admin | Ver transacciones blockchain       |
 | `/chaincode/install` | POST   | Admin         | Instalar nuevo chaincode           |
 | `/grafana/iframe`    | GET    | Admin         | Ver métricas integradas            |
+
+Detalle: [text](docs_v2/API_Blockchain_v2_fase_3.md)
 
 ---
 
