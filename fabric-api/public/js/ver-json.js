@@ -10,100 +10,80 @@ function aplicarModoGuardado() {
   }
 }
 
-// Convierte ArrayBuffer a hex
+// SHA-256 util
 function toHex(buffer) {
   return Array.from(new Uint8Array(buffer))
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
 }
-
-// Calcula SHA-256 de un string
 async function sha256(str) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(str);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return toHex(hashBuffer);
+  const enc = new TextEncoder().encode(str);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return toHex(buf);
 }
 
 async function cargar() {
   const params = new URLSearchParams(location.search);
   const tipo  = params.get('tipo');
   const txid  = params.get('txid');
-  document.getElementById('txid').textContent = txid || '(no proporcionado)';
-  document.getElementById('tipo').textContent = tipo || '(desconocido)';
-
-  // Ajustar título con icono
-  const icon = tipo === 'light' ? '🪶' : '🏋️';
-  document.getElementById('title').textContent = `${icon} JSON desde la Blockchain`;
+  document.getElementById('txid').textContent = txid;
+  document.getElementById('tipo').textContent = tipo;
+  document.getElementById('title').textContent =
+    `${tipo==='light'?'🪶':'🏋️'} JSON desde la Blockchain`;
 
   if (!tipo || !txid) {
     document.getElementById('contenido').innerHTML =
-      '<div class="error">❌ Falta tipo o txid en la URL</div>';
+      `<div class="error">❌ Falta tipo o txid</div>`;
     return;
   }
 
   try {
-    if (tipo === 'light') {
-      // 1) Recuperar JSON desde la BD
-      const regRes = await fetch('/registros');
-      const { light } = await regRes.json();
-      const rec = light.find(r => r.tx_id === txid);
-      if (!rec) throw new Error('Registro no encontrado en BD');
+    // Obtener registro de BD
+    const regRes = await fetch('/registros');
+    const { light, heavy } = await regRes.json();
+    const recList = tipo==='light'? light : heavy;
+    const rec     = recList.find(r=>r.tx_id===txid);
+    if (!rec) throw new Error('Registro no encontrado');
 
-      // r.data llega como string JSON
-      const dataString = rec.data;
-      const parsed = JSON.parse(dataString);
-      jsonData = parsed;
+    // Cálculo tiempo
+    const diffNs = (BigInt(rec.end_tx_ns) - BigInt(rec.start_tx_ns)).toString();
 
-      // Mostrar JSON
+    if (tipo==='light') {
+      jsonData = JSON.parse(rec.data);
       document.getElementById('contenido').innerHTML =
-        `<pre>${JSON.stringify(parsed, null, 2)}</pre>`;
+        `<pre>${JSON.stringify(jsonData,null,2)}</pre>`;
 
-      // 2) Recalcular hash y comparar con blockchain
-      const localHash = await sha256(dataString);
-
-      // 3) Recuperar hash de blockchain
-      const bcRes = await fetch(`/leer-json/${tipo}/${txid}`);
-      if (!bcRes.ok) throw new Error('Hash no encontrado en blockchain');
-      const bcRec = await bcRes.json();         // { tipo, payload, timestamp }
-      const bcHash = bcRec.payload;
-
-      // 4) Validación
-      const validDiv = document.getElementById('validacion');
-      if (localHash === bcHash) {
-        validDiv.textContent = `✅ Hash coincide: ${localHash}`;
-        validDiv.style.color = '#44bd32';
-      } else {
-        validDiv.textContent = `❌ ¡Hash NO coincide!
-Local: ${localHash}
-Chain: ${bcHash}`;
-        validDiv.style.color = '#e84118';
-      }
-
-      document.getElementById('descargarBtn').style.display = 'inline-block';
+      const localHash = await sha256(rec.data);
+      const bcHash    = (await (await fetch(`/leer-json/${tipo}/${txid}`)).json()).payload;
+      const validDiv  = document.getElementById('validacion');
+      validDiv.textContent = localHash===bcHash
+        ? '✅ Hash coincide'
+        : '❌ Hash NO coincide';
+      validDiv.style.color = localHash===bcHash ? '#44bd32' : '#e84118';
 
     } else {
-      // Heavy: solo request a blockchain
-      const res = await fetch(`/leer-json/${tipo}/${txid}`);
-      if (!res.ok) throw new Error('Transacción no encontrada');
-      const bcRec = await res.json();
-      jsonData = bcRec.payload ? JSON.parse(bcRec.payload) : {};
+      const bcData = (await (await fetch(`/leer-json/${tipo}/${txid}`)).json()).payload;
+      jsonData = JSON.parse(bcData);
       document.getElementById('contenido').innerHTML =
-        `<pre>${JSON.stringify(jsonData, null, 2)}</pre>`;
-      document.getElementById('descargarBtn').style.display = 'inline-block';
+        `<pre>${JSON.stringify(jsonData,null,2)}</pre>`;
     }
+
+    document.getElementById('tiempos').textContent =
+      `Duración: ${diffNs} ns`;
+    document.getElementById('descargarBtn').style.display = 'inline-block';
+
   } catch (e) {
     document.getElementById('contenido').innerHTML =
-      `<div class="error">❌ Error: ${e.message}</div>`;
+      `<div class="error">❌ ${e.message}</div>`;
   }
 }
 
 function descargar() {
   if (!jsonData) return;
-  const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `datos-${jsonData.tipo||'data'}-${new Date().toISOString()}.json`;
+  const blob = new Blob([JSON.stringify(jsonData,null,2)],{type:'application/json'});
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = `datos-${Date.now()}.json`;
   a.click();
 }
 
