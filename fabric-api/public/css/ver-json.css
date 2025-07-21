@@ -1,0 +1,64 @@
+:root {
+  --bg: #f9f9f9;
+  --text: #2f3640;
+  --card: #ffffff;
+  --pre-bg: #282c34;
+  --button: #2d98da;
+  --button-hover: #2270aa;
+}
+body.dark {
+  --bg: #1e272e;
+  --text: #f5f6fa;
+  --card: #2f3640;
+  --pre-bg: #1c1c1c;
+  --button: #00a8ff;
+  --button-hover: #0090dd;
+}
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  margin: 0;
+  padding: 40px;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+.container {
+  background: var(--card);
+  border-radius: 8px;
+  padding: 30px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+pre {
+  background: var(--pre-bg);
+  color: #fff;
+  padding: 20px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 0.95em;
+  line-height: 1.5;
+}
+.error {
+  color: #e84118;
+  font-weight: bold;
+}
+.btn {
+  background: var(--button);
+  color: white;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 20px;
+  font-size: 1em;
+}
+.btn:hover {
+  background: var(--button-hover);
+}
