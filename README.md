@@ -2,7 +2,41 @@
 
 Documentacion DeepWiki: [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/GSYAtools/ALBA-Blockchain)
 
-## Reinicio de la red
+## Instalación de red actualizada SmartBFT
+
+### Descarga del instalador:
+
+```bash
+curl -sSLO https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/install-fabric.sh
+chmod +x install-fabric.sh
+```
+
+### Instalación de fabric (ver >= 3.0.0) con soporte BFT:
+
+```bash
+./install-fabric.sh --fabric-version 3.1.1 --ca-version 1.5.15 docker samples binary
+```
+
+### Comprobar binarios:
+
+```bash
+fabric-samples/bin/peer version
+```
+
+### Levantar la red por primera vez:
+
+```bash
+cd fabric-samples/test-network
+
+# Iniciar red BFT con CA
+./network.sh up -bft -ca
+
+# Crear los canales (dos en este caso)
+./network.sh createChannel -c lightchannel -bft
+./network.sh createChannel -c heavymodel -bft
+```
+
+### Limpieza de la red
 
 ```bash
 cd fabric-samples/test-network
@@ -13,12 +47,9 @@ cd fabric-samples/test-network
 # Opcional pero recomendable: eliminar artefactos
 docker volume prune -f
 docker system prune -f
-
-# Levantar red con CA y canal limpio
-./network.sh up createChannel -c mychannel -ca
 ```
 
-## Desplegar el chaincode nuevamente
+## Desplegar el chaincode
 
 El chaincode debe estar en esta ruta, asegurarse:
 ```bash
