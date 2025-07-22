@@ -33,7 +33,7 @@ cd fabric-samples/test-network
 
 # Crear los canales (dos en este caso)
 ./network.sh createChannel -c lightchannel -bft
-./network.sh createChannel -c heavymodel -bft
+./network.sh createChannel -c heavychannel -bft
 ```
 
 ### Limpieza de la red
