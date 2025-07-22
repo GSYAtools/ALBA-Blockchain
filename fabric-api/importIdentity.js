@@ -7,6 +7,7 @@ async function main() {
     const credPath = path.join(
       __dirname,
       '..',
+      'fabric-samples',
       'test-network',
       'organizations',
       'peerOrganizations',

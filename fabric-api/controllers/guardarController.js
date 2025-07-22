@@ -1,70 +1,106 @@
+require('dotenv').config();
 const { Gateway, Wallets } = require('fabric-network');
-const path = require('path');
-const fs = require('fs-extra');
+const crypto = require('crypto');
+const mysql  = require('mysql2/promise');
+const fs     = require('fs-extra');
+const path   = require('path');
 
 const guardarJson = async (req, res) => {
+  let db, gateway;
   try {
     const { data, descripcion } = req.body;
     if (!data || !descripcion) {
-      return res.status(400).json({ error: 'Faltan campos requeridos' });
+      return res
+        .status(400)
+        .json({ error: 'Faltan campos requeridos (data, descripcion)' });
     }
 
-    // 1. Cargar conexión
-    const ccpPath = path.resolve(__dirname, '..', 'connection-org1.json');
-    const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
+    // 1) Conectar MySQL
+    db = await mysql.createConnection({
+      host:     process.env.DB_HOST,
+      user:     process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+      port:     parseInt(process.env.DB_PORT, 10) || 3306,
+      charset:  'utf8mb4'
+    });
 
-    // 2. Cargar wallet
-    const walletPath = path.join(__dirname, '..', 'wallet');
-    const wallet = await Wallets.newFileSystemWallet(walletPath);
-
-    const identity = await wallet.get('Admin@org1.example.com');
+    // 2) Cargar perfil y wallet
+    const ccpPath = path.resolve(__dirname, '..', process.env.CCP_PATH);
+    const ccp     = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
+    const wallet  = await Wallets.newFileSystemWallet(
+      path.resolve(__dirname, '..', process.env.WALLET_PATH)
+    );
+    const identity = await wallet.get(process.env.IDENTITY);
     if (!identity) {
-      return res.status(500).json({ error: 'Identidad no encontrada en wallet' });
+      return res
+        .status(500)
+        .json({ error: 'Identidad no encontrada en wallet' });
     }
 
-    const gateway = new Gateway();
+    // 3) Conectar Fabric Gateway
+    gateway = new Gateway();
     await gateway.connect(ccp, {
       wallet,
-      identity: 'Admin@org1.example.com',
+      identity: process.env.IDENTITY,
       discovery: { enabled: true, asLocalhost: true }
     });
 
-    const network = await gateway.getNetwork('mychannel');
-    const contract = network.getContract('jsonstore');
-
+    // 4) Preparar payloads
     const jsonString = JSON.stringify(data);
-    const tx = contract.createTransaction('StoreData');
-    await tx.submit(jsonString);
+    const lightHash  = crypto.createHash('sha256')
+                             .update(jsonString)
+                             .digest('hex');
+    const { LIGHT_CHANNEL, HEAVY_CHANNEL, CHAINCODE_NAME } = process.env;
 
-    const txid = tx.getTransactionId();
+    // 5) Transacción LIGHT (ns)
+    const netL     = await gateway.getNetwork(LIGHT_CHANNEL);
+    const contL    = netL.getContract(CHAINCODE_NAME);
+    const txL      = contL.createTransaction('StoreData');
+    const startLns = process.hrtime.bigint();
+    await txL.submit('light', lightHash);
+    const endLns   = process.hrtime.bigint();
+    const txidL    = txL.getTransactionId();
 
-    // Registrar metadata en archivo local
-    const logPath = path.join(__dirname, '..', 'tx-registros.json');
-    let registros = [];
+    // 6) Transacción HEAVY (ns)
+    const netH     = await gateway.getNetwork(HEAVY_CHANNEL);
+    const contH    = netH.getContract(CHAINCODE_NAME);
+    const txH      = contH.createTransaction('StoreData');
+    const startHns = process.hrtime.bigint();
+    await txH.submit('heavy', jsonString);
+    const endHns   = process.hrtime.bigint();
+    const txidH    = txH.getTransactionId();
 
-    if (fs.existsSync(logPath)) {
-      registros = JSON.parse(fs.readFileSync(logPath));
-    }
+    // 7) Persistir en BD
+    const now = new Date();
+    await db.execute(
+      `INSERT INTO light_model_data
+         (data, timestamp, start_tx_ns, end_tx_ns, tx_id)
+       VALUES (?, ?, ?, ?, ?)`,
+      [ jsonString, now, startLns.toString(), endLns.toString(), txidL ]
+    );
+    await db.execute(
+      `INSERT INTO heavy_model_data
+         (tx_id, timestamp, start_tx_ns, end_tx_ns)
+       VALUES (?, ?, ?, ?)`,
+      [ txidH, now, startHns.toString(), endHns.toString() ]
+    );
 
-    registros.push({
-      txid,
-      descripcion,
-      timestamp: new Date().toISOString()
-    });
-
-    fs.writeFileSync(logPath, JSON.stringify(registros, null, 2));
-
+    // 8) Desconectar y responder
     await gateway.disconnect();
-
-    res.json({ message: 'JSON guardado en Fabric', txid });
-  } catch (error) {
-    console.error('❌ Error completo:', error);
-    res.status(500).json({
-      error: error.message,
-      stack: error.stack
+    await db.end();
+    res.json({
+      message: 'Guardado en light & heavy con nanosegundos en BD',
+      txidLight: txidL,
+      txidHeavy: txidH
     });
+
+  } catch (err) {
+    console.error('❌ Error completo:', err);
+    if (gateway) await gateway.disconnect();
+    if (db)      await db.end();
+    res.status(500).json({ error: err.message });
   }
-  
 };
 
 module.exports = { guardarJson };

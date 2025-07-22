@@ -2,7 +2,41 @@
 
 Documentacion DeepWiki: [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/GSYAtools/ALBA-Blockchain)
 
-## Reinicio de la red
+## Instalación de red actualizada SmartBFT
+
+### Descarga del instalador:
+
+```bash
+curl -sSLO https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/install-fabric.sh
+chmod +x install-fabric.sh
+```
+
+### Instalación de fabric (ver >= 3.0.0) con soporte BFT:
+
+```bash
+./install-fabric.sh --fabric-version 3.1.1 --ca-version 1.5.15 docker samples binary
+```
+
+### Comprobar binarios:
+
+```bash
+fabric-samples/bin/peer version
+```
+
+### Levantar la red por primera vez:
+
+```bash
+cd fabric-samples/test-network
+
+# Iniciar red BFT con CA
+./network.sh up -bft -ca
+
+# Crear los canales (dos en este caso)
+./network.sh createChannel -c lightchannel -bft
+./network.sh createChannel -c heavymodel -bft
+```
+
+### Limpieza de la red
 
 ```bash
 cd fabric-samples/test-network
@@ -13,103 +47,39 @@ cd fabric-samples/test-network
 # Opcional pero recomendable: eliminar artefactos
 docker volume prune -f
 docker system prune -f
-
-# Levantar red con CA y canal limpio
-./network.sh up createChannel -c mychannel -ca
 ```
 
-## Desplegar el chaincode nuevamente
+## Desplegar el chaincode
 
-El chaincode debe estar en esta ruta, asegurarse:
-```bash
-fabric-samples/chaincode/jsonstore/go/jsonstore.go
-```
-
-Desde `fabric-samples/test-network` forzando la 'Endorsement-Policy' para que solo Org1 pueda aprobar las transacciones:
+Desde `fabric-samples/test-network`:
 ```bash
 ./network.sh deployCC \
-  -ccn jsonstore \
-  -ccp ../chaincode/jsonstore/go \
+  -ccn jsonstoragemodel \
+  -ccp ~/GitHub/ALBA-Blockchain/chaincode/jsonstoragemodel/go \
   -ccl go \
-  -ccep "OR('Org1MSP.member')"
+  -c lightchannel \
+  -ccep "OR('Org1MSP.member','Org2MSP.member')"
+
+./network.sh deployCC \
+  -ccn jsonstoragemodel \
+  -ccp ~/GitHub/ALBA-Blockchain/chaincode/jsonstoragemodel/go \
+  -ccl go \
+  -c heavychannel \
+  -ccep "OR('Org1MSP.member','Org2MSP.member')"
 ```
 
-## Configurar variables de entorno antes de `invoke`
+## Enviar peticion a través de la API
 
+Con `curl`:
 ```bash
-# Asegurar binarios y configs
-export PATH=${PWD}/../bin:$PATH
-export FABRIC_CFG_PATH=$PWD/../config/
-
-# Org1 peer env
-export CORE_PEER_TLS_ENABLED=true
-export CORE_PEER_LOCALMSPID="Org1MSP"
-export CORE_PEER_TLS_ROOTCERT_FILE=$PWD/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
-export CORE_PEER_MSPCONFIGPATH=$PWD/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
-export CORE_PEER_ADDRESS=localhost:7051
-```
-
-## Ejecutar `invoke` test
-
-```bash
-peer chaincode invoke \
-  -o localhost:7050 \
-  --ordererTLSHostnameOverride orderer.example.com \
-  --tls \
-  --cafile "$PWD/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" \
-  -C mychannel \
-  -n jsonstore \
-  --waitForEvent \
-  -c '{"function":"StoreData","Args":["{\"test_key_1\":\"test_value_1\",\"test_key_2\":test_value_2}"]}'
-```
-
-El resultado deberia ser algo como:
-```text
-txid [abc123...] committed with status (VALID)
-```
-
-## Ejecutar `query` para recuperar los datos
-```bash
-peer chaincode query \
-  -C mychannel \
-  -n jsonstore \
-  -c '{"function":"GetDataByTxID","Args":["<txID>"]}'
-```
-
-## Revisión de errores
-1. Comprobar que el commit del chaincode es correcto:
-```bash
-peer lifecycle chaincode querycommitted --channelID mychannel
-```
-Debe mostar algo como:
-```text
-Committed chaincode definitions on channel 'mychannel':
-Name: jsonstore, Version: 1.0, Sequence: 1, Endorsement Plugin: escc, Validation Plugin: vscc
-```
-
-2. Verificar que Org1 ha aprobado:
-```bash
-peer lifecycle chaincode checkcommitreadiness \
-  --channelID mychannel \
-  --name jsonstore \
-  --version 1.0 \
-  --sequence 1 \
-  --output json
-```
-La salida debe ser algo como:
-```json
-{
-  "approvals": {
-    "Org1MSP": true
-  }
-}
-```
-
-3. Comprobar chaincodes instalados:
-```bash
-peer lifecycle chaincode queryinstalled
-```
-Salida:
-```text
-Package ID: jsonstore_2:abcd123..., Label: jsonstore_2
+curl -X POST http://localhost:<PORT>/guardar-json \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "id": 123,
+      "name": "Sensor A",
+      "measurements": [12.5, 13.0, 12.8]
+    },
+    "descripcion": "Registro de lecturas del Sensor A"
+  }'
 ```

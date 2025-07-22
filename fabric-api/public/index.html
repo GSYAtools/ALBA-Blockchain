@@ -1,269 +1,42 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-    <meta charset="UTF-8" />
-    <title>Dashboard - Fabric JSON</title>
-    <style>
-        :root {
-            --bg: #f5f6fa;
-            --text: #2f3640;
-            --card: #ffffff;
-            --table-head: #f1f2f6;
-            --button: #2d98da;
-            --button-hover: #2270aa;
-            --green: #44bd32;
-            --green-hover: #3a9942;
-        }
-
-        body.dark {
-            --bg: #1e272e;
-            --text: #f5f6fa;
-            --card: #2f3640;
-            --table-head: #353b48;
-            --button: #00a8ff;
-            --button-hover: #0090dd;
-            --green: #4cd137;
-            --green-hover: #44bd32;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 0;
-        }
-
-        header {
-            background: var(--card);
-            color: var(--text);
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-        }
-
-        header h1 {
-            margin: 0;
-            font-size: 1.5em;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn-top {
-            background-color: var(--button);
-            color: white;
-            padding: 10px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.95em;
-        }
-
-        .btn-top:hover {
-            background-color: var(--button-hover);
-        }
-
-        main {
-            max-width: 1000px;
-            margin: 30px auto;
-            padding: 20px;
-        }
-
-        .form-section {
-            background: var(--card);
-            border-radius: 8px;
-            padding: 25px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            margin-bottom: 30px;
-            display: none;
-        }
-
-        label {
-            display: block;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-
-        input,
-        textarea {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 1em;
-            background: var(--bg);
-            color: var(--text);
-        }
-
-        button {
-            background-color: var(--button);
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            margin-top: 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1em;
-        }
-
-        button:hover {
-            background-color: var(--button-hover);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: var(--card);
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
-
-        th,
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #ccc;
-            text-align: left;
-        }
-
-        th {
-            background-color: var(--table-head);
-        }
-
-        td button {
-            background-color: var(--green);
-            font-size: 0.9em;
-            padding: 6px 12px;
-            margin: 0;
-        }
-
-        td button:hover {
-            background-color: var(--green-hover);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Dashboard - Fabric JSON</title>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
-
 <body>
-    <header>
-        <h1>📊 Dashboard Fabric</h1>
-        <div class="header-actions">
-            <button class="btn-top" onclick="toggleFormulario()">Enviar datos</button>
-            <button class="btn-top" onclick="toggleModo()">🌙 / ☀️</button>
-        </div>
-    </header>
+  <header>
+    <h1>📊 Dashboard Fabric</h1>
+    <button id="btn-modo" class="btn-top">🌙 / ☀️</button>
+  </header>
+  <main>
+    <h2>🪶 Registros Light Model <span id="last-update"></span></h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Fecha</th>
+          <th>Tiempo proc.</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-light"></tbody>
+    </table>
 
-    <main>
-        <div class="form-section" id="formulario">
-            <h2>📤 Enviar nuevo JSON</h2>
-            <label for="descripcion">Descripción:</label>
-            <input type="text" id="descripcion" placeholder="Ej. Registro de cliente" />
-
-            <label for="jsondata">Contenido JSON:</label>
-            <textarea id="jsondata" placeholder='{"nombre": "Juan", "email": "juan@example.com"}'></textarea>
-
-            <button onclick="enviar()">Enviar a Fabric</button>
-        </div>
-
-        <h2>📋 Registros almacenados <span id="last-update" style="font-size:0.8em;color:gray;"></span></h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Descripción</th>
-                    <th>Fecha</th>
-                    <th>Acción</th>
-                </tr>
-            </thead>
-            <tbody id="tabla">
-                <!-- Registros se insertan aquí -->
-            </tbody>
-        </table>
-    </main>
-
-    <script>
-        function toggleFormulario() {
-            const form = document.getElementById('formulario');
-            form.style.display = form.style.display === 'none' || !form.style.display ? 'block' : 'none';
-        }
-
-        async function cargarRegistros() {
-            const res = await fetch('/registros');
-            const datos = await res.json();
-            const tabla = document.getElementById('tabla');
-            tabla.innerHTML = '';
-
-            datos.reverse().forEach(r => {
-                const row = `
-          <tr>
-            <td>${r.descripcion}</td>
-            <td>${new Date(r.timestamp).toLocaleString()}</td>
-            <td><button onclick="verJson('${r.txid}')">Ver JSON</button></td>
-          </tr>`;
-                tabla.insertAdjacentHTML('beforeend', row);
-            });
-
-            document.getElementById('last-update').textContent = `(última actualización: ${new Date().toLocaleTimeString()})`;
-        }
-
-        async function enviar() {
-            const descripcion = document.getElementById('descripcion').value.trim();
-            const rawJson = document.getElementById('jsondata').value.trim();
-
-            if (!descripcion || !rawJson) {
-                alert('Por favor completa la descripción y el JSON.');
-                return;
-            }
-
-            let data;
-            try {
-                data = JSON.parse(rawJson);
-            } catch (e) {
-                alert('⚠️ El JSON no es válido.');
-                return;
-            }
-
-            const res = await fetch('/guardar-json', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ data, descripcion })
-            });
-
-            const resultado = await res.json();
-            if (res.ok) {
-                alert('✅ Guardado con éxito. txid: ' + resultado.txid);
-                document.getElementById('descripcion').value = '';
-                document.getElementById('jsondata').value = '';
-                document.getElementById('formulario').style.display = 'none';
-                await cargarRegistros(); // Carga inmediata tras envío
-            } else {
-                alert('❌ Error: ' + resultado.error);
-            }
-        }
-
-        function verJson(txid) {
-            window.open(`/ver-json.html?txid=${txid}`, '_blank');
-        }
-
-        function toggleModo() {
-            const dark = document.body.classList.toggle('dark');
-            localStorage.setItem('modoOscuro', dark ? '1' : '0');
-        }
-
-        function aplicarModoGuardado() {
-            const dark = localStorage.getItem('modoOscuro') === '1';
-            if (dark) document.body.classList.add('dark');
-        }
-
-        aplicarModoGuardado();
-        cargarRegistros();
-        setInterval(cargarRegistros, 10000); // Autoactualizar cada 10 segundos
-    </script>
+    <h2>🏋️ Registros Heavy Model</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Fecha</th>
+          <th>Tiempo proc.</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-heavy"></tbody>
+    </table>
+  </main>
+  <script src="js/main.js"></script>
 </body>
-
 </html>
