@@ -24,3 +24,6 @@ CREATE TABLE heavy_model_data (
     INDEX idx_hm_time     (timestamp),
     INDEX idx_hm_tx_id    (tx_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--*** MODIFICACIONES PARA METRICS ***--
+
