@@ -1,60 +1,99 @@
-require('dotenv').config();
 const { Gateway, Wallets } = require('fabric-network');
 const path = require('path');
 const fs = require('fs-extra');
+const { BlockDecoder } = require('fabric-common');
+const mysql = require('mysql2/promise');
 
 const leerJson = async (req, res) => {
-  let gateway;
   try {
     const { tipo, txid } = req.params;
-    if (!tipo || !txid) {
-      return res.status(400).json({ error: 'Faltan parámetros en la URL: tipo y txid' });
-    }
-    if (!['light', 'heavy'].includes(tipo)) {
-      return res.status(400).json({ error: 'Tipo inválido (debe ser "light" o "heavy")' });
+
+    if (!txid || !tipo) {
+      return res.status(400).json({ error: 'Faltan parámetros requeridos (tipo, txid)' });
     }
 
-    // Carga de perfil de red y wallet
-    const ccpPath = path.resolve(__dirname, '..', process.env.CCP_PATH);
+    const ccpPath = path.resolve(__dirname, '..', 'connection-org1.json');
     const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
-    const walletPath = path.resolve(__dirname, '..', process.env.WALLET_PATH);
+
+    const walletPath = path.join(__dirname, '..', 'wallet');
     const wallet = await Wallets.newFileSystemWallet(walletPath);
-    const identity = await wallet.get(process.env.IDENTITY);
+
+    const identity = await wallet.get('Admin@org1.example.com');
     if (!identity) {
       return res.status(500).json({ error: 'Identidad no encontrada en wallet' });
     }
 
-    // Conectar al gateway
-    gateway = new Gateway();
+    const gateway = new Gateway();
     await gateway.connect(ccp, {
       wallet,
-      identity: process.env.IDENTITY,
+      identity: 'Admin@org1.example.com',
       discovery: { enabled: true, asLocalhost: true }
     });
 
-    // Selección de canal y contrato según tipo
-    const channel = tipo === 'light'
-      ? process.env.LIGHT_CHANNEL
-      : process.env.HEAVY_CHANNEL;
-    const contractName = process.env.CHAINCODE_NAME;
-    const network = await gateway.getNetwork(channel);
-    const contract = network.getContract(contractName);
+    const channelName = tipo === 'light' ? 'lightchannel' : 'heavychannel';
+    const network = await gateway.getNetwork(channelName);
 
-    // Evaluar transacción de lectura
-    const resultBuffer = await contract.evaluateTransaction('GetDataByTxID', tipo, txid);
-    const record = JSON.parse(resultBuffer.toString());
+    const contract = network.getContract('jsonstoragemodel');
+    const qscc = network.getContract('qscc');
 
-    // Desconexión
+    // ✅ Llamada corregida con 2 parámetros
+    const result = await contract.evaluateTransaction('GetDataByTxID', tipo, txid);
+    const txData = JSON.parse(result.toString());
+
+    // 🔎 Si es tipo light, recuperar contenido de base de datos
+    let localData = null;
+    if (tipo === 'light') {
+      const pool = await mysql.createPool({
+        host: process.env.DB_HOST,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME,
+        port: parseInt(process.env.DB_PORT, 10) || 3306
+      });
+
+      const [[row]] = await pool.query(
+        'SELECT data FROM light_model_data WHERE tx_id = ?',
+        [txid]
+      );
+      if (!row || !row.data) {
+        return res.status(404).json({ error: 'No se pudo obtener contenido de la base de datos' });
+      }
+      localData = row.data;
+    }
+
+    // 🧱 Obtener bloque
+    const blockBuf = await qscc.evaluateTransaction('GetBlockByTxID', channelName, txid);
+    const block = BlockDecoder.decode(blockBuf);
+    const envelope = block.data.data.find(d => d.payload.header.channel_header.tx_id === txid);
+    if (!envelope) {
+      throw new Error('No se encontró el envelope con el txid proporcionado');
+    }
+
+    const txHeader = envelope.payload.header.channel_header;
+    const signature = envelope.signature;
+    const creator = envelope.payload.header.signature_header.creator;
+
     await gateway.disconnect();
 
-    // Devolver el registro completo
-    res.json(record);
+    res.json({
+      payload: txData.payload, // hash (light) o JSON (heavy)
+      tipo,
+      channel: channelName,
+      localData, // 🔄 nuevo campo: datos locales en caso light
+      creator: {
+        mspid: creator.mspid,
+        id_bytes: creator.id_bytes.toString('utf8')
+      },
+      signature: signature.toString('base64'),
+      tx_header: txHeader
+    });
+
   } catch (error) {
     console.error('❌ Error al leer JSON:', error);
-    if (gateway) {
-      try { await gateway.disconnect(); } catch(_) {}
-    }
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: 'Error interno al leer JSON',
+      detalle: error.message || error.toString()
+    });
   }
 };
 

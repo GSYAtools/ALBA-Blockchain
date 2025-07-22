@@ -43,28 +43,45 @@ async function cargar() {
   }
 
   try {
-    // 1) Traer el JSON directamente de la blockchain
+    // 1) Traer el JSON y metadatos desde backend
     const resJson = await fetch(`/leer-json/${tipo}/${txid}`);
     if (!resJson.ok) throw new Error('Transacción no encontrada');
     const bcRec = await resJson.json();
 
+    // 2) Mostrar datos
+    let html = '';
     if (tipo === 'light') {
-      // payload es el hash para light; aquí sólo mostramos el contenido original
-      document.getElementById('contenido').innerHTML =
-        `<div>Hash en blockchain: ${bcRec.payload}</div>`;
+      // Cargar JSON desde base de datos
+      // Usar directamente el campo localData del backend
+      if (!bcRec.localData) throw new Error('No se pudo obtener contenido de la base de datos');
+      jsonData = JSON.parse(bcRec.localData);
+      const calcHash = await sha256(bcRec.localData);
+      const hashOk = calcHash === bcRec.payload;
+
+      html += `<div class="hashes"><b>Hash en blockchain:</b><br>${bcRec.payload}<br>`;
+      html += `<b>Hash en base de datos:</b><br>${calcHash}<br>`;
+      html += hashOk
+        ? '<div class="ok">✔️ Integridad verificada</div>'
+        : '<div class="error">❌ Hash no coincide</div>';
+      html += '</div>';
+      html += `<pre>${JSON.stringify(jsonData, null, 2)}</pre>`;
     } else {
-      // heavy: payload es el JSON crudo
       jsonData = JSON.parse(bcRec.payload);
-      document.getElementById('contenido').innerHTML =
-        `<pre>${JSON.stringify(jsonData, null, 2)}</pre>`;
+      html += `<pre>${JSON.stringify(jsonData, null, 2)}</pre>`;
     }
 
-    // 2) Cargar métricas
+    // Datos del bloque
+    html += `<div class="block-info"><b>🔐 Firmado por:</b> ${bcRec.signer || 'desconocido'}<br>`;
+    html += `<b>⛓️ Canal:</b> ${bcRec.channel || 'n/d'}<br>`;
+    html += `<b>🧱 Creador:</b> ${bcRec.creator || 'n/d'}</div>`;
+
+    document.getElementById('contenido').innerHTML = html;
+
+    // 3) Cargar métricas
     const metRes = await fetch(`/metrics/tx/${txid}`);
     if (!metRes.ok) throw new Error('No se pudieron cargar métricas');
     const { window, metrics } = await metRes.json();
 
-    // 3) Duración en microsegundos
     const durUs = window.duration * 1e6;
     document.getElementById('tiempos').textContent =
       `Duración: ${durUs.toFixed(0)} µs`;
@@ -78,7 +95,7 @@ async function cargar() {
       peerCpuPct: '%',
       peerMemBytes: 'B',
       hostMemUsagePct: '%',
-      containerCount: 'count',
+      containerCount: 'containers',
       totalContainerMem: 'B',
       proposalDuration: 'µs',
       proposalsReceived: 'req/s',
@@ -97,7 +114,6 @@ async function cargar() {
       addMetricRow(name, value.toFixed(3), units[name] || '');
     }
 
-    // 5) Mostrar botón de descarga para heavy
     if (tipo === 'heavy') {
       document.getElementById('descargarBtn').style.display = 'inline-block';
     }
