@@ -50,24 +50,40 @@ async function cargar() {
 
     // 2) Mostrar datos
     let html = '';
+
     if (tipo === 'light') {
       // Cargar JSON desde base de datos
-      // Usar directamente el campo localData del backend
-      if (!bcRec.localData) throw new Error('No se pudo obtener contenido de la base de datos');
-      jsonData = JSON.parse(bcRec.localData);
-      const calcHash = await sha256(bcRec.localData);
+      const resDb = await fetch(`/data/${txid}`);
+      if (!resDb.ok) throw new Error('No se pudo obtener contenido de la base de datos');
+      const { data } = await resDb.json();
+      jsonData = JSON.parse(data);
+
+      const calcHash = await sha256(data);
       const hashOk = calcHash === bcRec.payload;
 
-      html += `<div class="hashes"><b>Hash en blockchain:</b><br>${bcRec.payload}<br>`;
-      html += `<b>Hash en base de datos:</b><br>${calcHash}<br>`;
-      html += hashOk
-        ? '<div class="ok">✔️ Integridad verificada</div>'
-        : '<div class="error">❌ Hash no coincide</div>';
-      html += '</div>';
-      html += `<pre>${JSON.stringify(jsonData, null, 2)}</pre>`;
+      // Mostrar tabla de hashes
+      const hashTbody = document.getElementById('hashTbody');
+      hashTbody.innerHTML = `
+        <tr>
+          <td>Hash Blockchain</td>
+          <td>${bcRec.payload}</td>
+          <td>${hashOk ? '✔️ Correcto' : '❌ Vulnerado'}</td>
+        </tr>
+        <tr>
+          <td>Hash Base de Datos</td>
+          <td>${calcHash}</td>
+          <td>${hashOk ? '✔️ Correcto' : '❌ Vulnerado'}</td>
+        </tr>
+      `;
+      document.getElementById('hashTable').style.display = 'table';
+
+      // Mostrar JSON en recuadro
+      document.getElementById('jsonPre').textContent = JSON.stringify(jsonData, null, 2);
+      document.getElementById('jsonBox').style.display = 'block';
     } else {
       jsonData = JSON.parse(bcRec.payload);
-      html += `<pre>${JSON.stringify(jsonData, null, 2)}</pre>`;
+      document.getElementById('jsonPre').textContent = JSON.stringify(jsonData, null, 2);
+      document.getElementById('jsonBox').style.display = 'block';
     }
 
     // Datos del bloque
@@ -135,5 +151,6 @@ function descargar() {
 window.onload = () => {
   aplicarModoGuardado();
   document.getElementById('btn-modo').onclick = toggleModo;
+  document.getElementById('descargarBtn').onclick = descargar;
   cargar();
 };

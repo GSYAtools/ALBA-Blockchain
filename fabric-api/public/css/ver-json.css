@@ -114,3 +114,19 @@ pre {
 #metricsTable tbody tr:nth-child(even) {
   background-color: var(--stripe-even);
 }
+
+.json-box {
+  background-color: var(--bg);
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-family: monospace;
+  max-height: 500px;
+  overflow: auto;
+  margin-top: 10px;
+}
+
+table.card th, table.card td {
+  text-align: left;
+  padding: 6px 10px;
+}

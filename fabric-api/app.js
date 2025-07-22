@@ -4,27 +4,33 @@ const bodyParser = require('body-parser');
 const path       = require('path');
 const mysql      = require('mysql2/promise');
 
-const guardarRouter = require('./routes/guardar');
-const leerRouter   = require('./routes/leer');
-const metricsRouter = require('./routes/metrics');
+// Rutas
+const guardarRouter  = require('./routes/guardar');
+const leerRouter     = require('./routes/leer');
+const metricsRouter  = require('./routes/metrics');
+const dataRouter     = require('./routes/data'); // ✅ IMPORTAR
 
 const app  = express();
 const PORT = process.env.PORT || 3460;
 
 app.use(bodyParser.json());
-app.use('/guardar-json', guardarRouter);
-app.use('/leer-json',   leerRouter);
-app.use('/metrics',     metricsRouter);
 
+app.use('/guardar-json', guardarRouter);
+app.use('/leer-json',    leerRouter);
+app.use('/metrics',      metricsRouter);
+app.use('/data',         dataRouter); // ✅ USAR
+
+// Conexión pool (aún si no se usa aquí directamente)
 const pool = mysql.createPool({
   host:     process.env.DB_HOST,
   user:     process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  port:     parseInt(process.env.DB_PORT,10) || 3306,
+  port:     parseInt(process.env.DB_PORT, 10) || 3306,
   charset:  'utf8mb4'
 });
 
+// Ruta para obtener todos los registros
 app.get('/registros', async (req, res) => {
   try {
     const [lightRows] = await pool.query(
@@ -47,8 +53,9 @@ app.get('/registros', async (req, res) => {
   }
 });
 
+// Archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.listen(PORT, () => {
-  console.log(`API escuchando en http://localhost:${PORT}`);
+  console.log(`✅ API escuchando en http://localhost:${PORT}`);
 });
