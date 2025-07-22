@@ -6,6 +6,7 @@ const mysql      = require('mysql2/promise');
 
 const guardarRouter = require('./routes/guardar');
 const leerRouter   = require('./routes/leer');
+const metricsRouter = require('./routes/metrics');
 
 const app  = express();
 const PORT = process.env.PORT || 3460;
@@ -13,6 +14,7 @@ const PORT = process.env.PORT || 3460;
 app.use(bodyParser.json());
 app.use('/guardar-json', guardarRouter);
 app.use('/leer-json',   leerRouter);
+app.use('/metrics',     metricsRouter);
 
 const pool = mysql.createPool({
   host:     process.env.DB_HOST,

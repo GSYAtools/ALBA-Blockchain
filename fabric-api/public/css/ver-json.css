@@ -1,54 +1,77 @@
 :root {
-  --bg: #f9f9f9;
+  --bg: #f9f9fa;
   --text: #2f3640;
   --card: #ffffff;
-  --pre-bg: #282c34;
+  --table-head: #e1e2e6;
+  --stripe-odd: #ffffff;
+  --stripe-even: #f1f2f6;
   --button: #2d98da;
   --button-hover: #2270aa;
 }
+
 body.dark {
   --bg: #1e272e;
   --text: #f5f6fa;
   --card: #2f3640;
-  --pre-bg: #1c1c1c;
+  --table-head: #353b48;
+  --stripe-odd: #2f3640;
+  --stripe-even: #353b48;
   --button: #00a8ff;
   --button-hover: #0090dd;
 }
+
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: var(--bg);
   color: var(--text);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 40px;
-  max-width: 900px;
-  margin-left: auto;
-  margin-right: auto;
 }
+
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 25px;
 }
+
 .container {
   background: var(--card);
   border-radius: 8px;
   padding: 30px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
+
+.info {
+  color: #666;
+  font-size: 0.9em;
+  margin-bottom: 20px;
+}
+
+.json-box {
+  background: var(--card);
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 20px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.json-box h3 {
+  margin-top: 0;
+}
+
 pre {
-  background: var(--pre-bg);
-  color: #fff;
+  background: var(--card);
+  color: var(--text);
   padding: 20px;
   border-radius: 6px;
   overflow-x: auto;
   font-size: 0.95em;
   line-height: 1.5;
+  margin-bottom: 20px;
 }
-.error {
-  color: #e84118;
-  font-weight: bold;
-}
+
 .btn {
   background: var(--button);
   color: white;
@@ -56,9 +79,38 @@ pre {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  margin-top: 20px;
   font-size: 1em;
 }
+
 .btn:hover {
   background: var(--button-hover);
+}
+
+/* Metrics table */
+#metricsTable {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  margin-top: 10px;
+}
+
+#metricsTable th {
+  background-color: var(--table-head);
+  text-align: left;
+  padding: 12px;
+}
+
+#metricsTable td {
+  padding: 12px;
+  text-align: left;
+}
+
+#metricsTable tbody tr:nth-child(odd) {
+  background-color: var(--stripe-odd);
+}
+
+#metricsTable tbody tr:nth-child(even) {
+  background-color: var(--stripe-even);
 }
