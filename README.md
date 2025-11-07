@@ -104,14 +104,14 @@ Desde `fabric-samples/test-network`:
 ```bash
 ./network.sh deployCC \
   -ccn jsonstoragemodel \
-  -ccp ~/GitHub/ALBA-Blockchain/chaincode/jsonstoragemodel/go \
+  -ccp ~/ALBA-Blockchain/chaincode/jsonstoragemodel/go \
   -ccl go \
   -c lightchannel \
   -ccep "OR('Org1MSP.member','Org2MSP.member')"
 
 ./network.sh deployCC \
   -ccn jsonstoragemodel \
-  -ccp ~/GitHub/ALBA-Blockchain/chaincode/jsonstoragemodel/go \
+  -ccp ~/ALBA-Blockchain/chaincode/jsonstoragemodel/go \
   -ccl go \
   -c heavychannel \
   -ccep "OR('Org1MSP.member','Org2MSP.member')"
