@@ -56,6 +56,4 @@ app.get('/registros', async (req, res) => {
 // Archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.listen(PORT, () => {
-  console.log(`✅ API escuchando en http://localhost:${PORT}`);
-});
+app.listen(PORT, '0.0.0.0');
